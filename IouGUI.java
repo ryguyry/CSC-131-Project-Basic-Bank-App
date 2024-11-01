@@ -19,28 +19,39 @@ import javax.swing.JTextField;
 public class IouGUI implements ActionListener, KeyListener {
 	//here are our variables for the GUI
     private JLabel label;
+    private JLabel user;
     private JButton requestButton;
     private JButton manageButton;
     private JFrame frame;
     private JPanel panel;
     private JTextField amountField;
     private JTextField creditorField;
+    private JTextField dueDateField;
     private JLabel amountLabel;
     private JLabel creditorLabel;
+    private JLabel dueDateLabel;
     private double amount;
     private String creditor;
+    private String borrower;
+    //private String dueDate;
     
     //here is our constructor for the GUI
-    public IouGUI() {
+    public IouGUI(String username) {
+        this.borrower = username;
         frame = new JFrame();
-        panel = new JPanel();       
+        panel = new JPanel();  
         //boxLayout for vertical alignment
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 100, 50)); // Padding around the panel        
         //label at the top
         label = new JLabel("IOU Manager");
+        user = new JLabel("Welcome " + username + " how can we help you?");
+        dueDateLabel = new JLabel("When do you think you can pay it back?");
         label.setFont(new Font("Arial", Font.BOLD, 24)); // set font size to 24
         label.setAlignmentX(JLabel.CENTER_ALIGNMENT); // center the label
+        user.setFont(new Font("Arial", Font.BOLD, 18)); // set font size to 24
+        user.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+        dueDateLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);     
         //buttons and their labels
         requestButton = new JButton("Create a new IOU");
         manageButton = new JButton("Manage Existing IOU");
@@ -53,9 +64,45 @@ public class IouGUI implements ActionListener, KeyListener {
         //action listeners check for buttons being pressed
         requestButton.addActionListener(this);
         manageButton.addActionListener(this);
+        //moved this code to the constructor to prevent formating errors between transitions
+        amountLabel = new JLabel("Amount:");
+        creditorLabel = new JLabel("Creditor's Name:");
+        amountField = new JTextField(15);
+        creditorField = new JTextField(15);
+        dueDateField = new JTextField(15);
+        //added KeyListeners to enable button only if text fields are filled
+        amountField.addKeyListener(this);
+        creditorField.addKeyListener(this);
+        //align components
+        amountLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+        amountField.setAlignmentX(JTextField.CENTER_ALIGNMENT);
+        creditorLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+        creditorField.setAlignmentX(JTextField.CENTER_ALIGNMENT);
         //components are added to the window panel
         panel.add(label); // Add the label first
-        panel.add(Box.createVerticalStrut(50)); // Vertical space between label and buttons
+        panel.add(Box.createVerticalStrut(40));
+        panel.add(user);
+        panel.add(Box.createVerticalStrut(20)); // Vertical space between label and buttons
+        panel.add(amountLabel);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(amountField);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creditorLabel);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creditorField);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(dueDateLabel);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(dueDateField);
+        panel.add(Box.createVerticalStrut(10));
+        //hide components initially
+        amountLabel.setVisible(false);
+        amountField.setVisible(false);
+        creditorLabel.setVisible(false);
+        creditorField.setVisible(false);
+        dueDateLabel.setVisible(false);
+        dueDateField.setVisible(false);
+        //buttons are visible
         panel.add(requestButton); // Add request button
         panel.add(Box.createVerticalStrut(15)); // Vertical space between buttons
         panel.add(manageButton); // Add manage button
@@ -72,10 +119,10 @@ public class IouGUI implements ActionListener, KeyListener {
             }
         });
     }
-    //here is the main function
+    /*here is the TEST FROM EARLIER - DO WE NEED? (Probably not)
     public static void main(String[] args) { 
         new IouGUI();
-    }
+    }*/
     //button actions
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -83,29 +130,17 @@ public class IouGUI implements ActionListener, KeyListener {
             if (requestButton.getText().equals("Create a new IOU")) {
                 label.setText("Request Money");
                 requestButton.setText("Send Request");
-                manageButton.setText("Back");             
+                manageButton.setText("Back"); 
+                //add components in the correct order (below buttons)
+                amountLabel.setVisible(true);
+                amountField.setVisible(true);
+                creditorLabel.setVisible(true);
+                creditorField.setVisible(true);
+                dueDateLabel.setVisible(true);
+                dueDateField.setVisible(true);
                 //add text fields and labels for "Amount" and "Creditor" if they are not there
                 if (amountField == null && creditorField == null) {
                 	requestButton.setEnabled(false); //here we have disabled the request button
-                    amountLabel = new JLabel("Amount:");
-                    creditorLabel = new JLabel("Creditor's Name:");
-                    amountField = new JTextField(15);
-                    creditorField = new JTextField(15);
-                    //added KeyListeners to enable button only if text fields are filled
-                    amountField.addKeyListener(this);
-                    creditorField.addKeyListener(this);
-                    //align components
-                    amountLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-                    amountField.setAlignmentX(JTextField.CENTER_ALIGNMENT);
-                    creditorLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-                    creditorField.setAlignmentX(JTextField.CENTER_ALIGNMENT);
-                    //add components in the correct order (below buttons)
-                    panel.add(Box.createVerticalStrut(20)); //space between label and fields
-                    panel.add(amountLabel);
-                    panel.add(amountField);
-                    panel.add(Box.createVerticalStrut(10)); //space between Amount and Creditor
-                    panel.add(creditorLabel);
-                    panel.add(creditorField);
                     //refresh layout
                     panel.revalidate();
                     panel.repaint();
@@ -113,7 +148,8 @@ public class IouGUI implements ActionListener, KeyListener {
             } else if (requestButton.getText().equals("Send Request")) {
                 //save values when "Send Request" is pressed
                 amount = Double.parseDouble(amountField.getText().trim());
-                creditor = creditorField.getText().trim();                
+                creditor = creditorField.getText().trim(); 
+                //dueDate = dueDateField.getText().trim(); 
                 //update label and buttons for confirmation
                 label.setText("Confirm IOU:");
                 requestButton.setText("Confirm");
@@ -122,15 +158,25 @@ public class IouGUI implements ActionListener, KeyListener {
                 amountLabel.setText("Amount: $" + amount);
                 creditorLabel.setText("Creditor: " + creditor);
                 //remove text fields since we're showing confirmed values
-                panel.remove(amountField);
-                panel.remove(creditorField);
-                panel.revalidate();
-                panel.repaint();
+                amountLabel.setVisible(true);
+                creditorLabel.setVisible(true);
+			    amountField.setVisible(false);
+			    creditorField.setVisible(false);
+			    dueDateLabel.setVisible(false);
+			    dueDateField.setVisible(false);
+                amountField.setText("");
+                creditorField.setText("");
+                dueDateField.setText("");
             } else if (requestButton.getText().equals("Confirm")) {
-                //final confirmation scenario
+            	//call the createIou class
+                createIou createIou = new createIou();
+                createIou.addIou(amount, creditor, borrower);
+                //final confirmation scenario            	
+            	amountLabel.setVisible(true);
+                creditorLabel.setVisible(true);
                 label.setText("Thank you!");
                 amountLabel.setText("Request Sent");
-                creditorLabel.setText(creditor + " has been informed.");
+                creditorLabel.setText(creditor + " has been informed.");              
                 requestButton.setText("Return to IOU Manager");
                 manageButton.setVisible(false);
             }else if (requestButton.getText().equals("Return to IOU Manager")) {
@@ -139,14 +185,15 @@ public class IouGUI implements ActionListener, KeyListener {
                 requestButton.setText("Create a new IOU");
                 manageButton.setVisible(true);
                 manageButton.setText("Manage Existing IOU");
-                panel.remove(amountLabel);
-                panel.remove(amountField);
-                panel.remove(creditorLabel);
-                panel.remove(creditorField);
-                amountField = null;
-                creditorField = null;
-                panel.revalidate();
-                panel.repaint();
+			    amountLabel.setVisible(false);
+			    amountField.setVisible(false);
+			    creditorLabel.setVisible(false);
+			    creditorField.setVisible(false);
+			    dueDateLabel.setVisible(false);
+			    dueDateField.setVisible(false);
+			    amountField.setText("");
+			    creditorField.setText("");
+			    dueDateField.setText("");
             }       
         }
         //manage button functionality
@@ -173,14 +220,15 @@ public class IouGUI implements ActionListener, KeyListener {
         				requestButton.setText("Create a new IOU");
         				requestButton.setEnabled(true);
         				manageButton.setText("Manage Existing IOU");
-        				panel.remove(amountLabel);
-        				panel.remove(amountField);
-        				panel.remove(creditorLabel);
-        				panel.remove(creditorField);
-        				amountField = null;
-        				creditorField = null;
-        				panel.revalidate();
-        				panel.repaint();
+        			    amountLabel.setVisible(false);
+        			    amountField.setVisible(false);
+        			    creditorLabel.setVisible(false);
+        			    creditorField.setVisible(false);
+        			    dueDateLabel.setVisible(false);
+        			    dueDateField.setVisible(false);
+        			    amountField.setText("");
+        			    creditorField.setText("");
+        			    dueDateField.setText("");
         			}
         			else {
         				//go back to the initial state       	
@@ -188,11 +236,17 @@ public class IouGUI implements ActionListener, KeyListener {
                      	requestButton.setText("Create a new IOU");
                         requestButton.setVisible(true);
                         manageButton.setText("Manage Existing IOU");
-                        panel.remove(creditorLabel);
+        			    amountLabel.setVisible(false);
+        			    amountField.setVisible(false);
+        			    creditorLabel.setVisible(false);
+        			    creditorField.setVisible(false);
+        			    dueDateLabel.setVisible(false);
+        			    dueDateField.setVisible(false);
+        			    amountField.setText("");
+        			    creditorField.setText("");
+        			    dueDateField.setText("");                     
         			}
-                }
-        			
-          	
+                }        		    	
         }
     }  
   
@@ -206,7 +260,7 @@ public class IouGUI implements ActionListener, KeyListener {
             requestButton.setEnabled(false);
         }
     }
-
+    
     @Override
     public void keyTyped(KeyEvent e) {
         //not used
