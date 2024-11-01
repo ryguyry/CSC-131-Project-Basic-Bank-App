@@ -29,13 +29,25 @@ CREATE TABLE `iou` (
   `amount` decimal(10,2) NOT NULL,
   `status` enum('pending','paid') DEFAULT 'pending',
   `due_date` date DEFAULT NULL,
+  `lender_name` varchar(255) DEFAULT NULL,
+  `borrower_name` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`iou_id`),
   KEY `lender_id` (`lender_id`),
   KEY `borrower_id` (`borrower_id`),
   CONSTRAINT `iou_ibfk_1` FOREIGN KEY (`lender_id`) REFERENCES `users` (`user_id`),
   CONSTRAINT `iou_ibfk_2` FOREIGN KEY (`borrower_id`) REFERENCES `users` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `iou`
+--
+
+LOCK TABLES `iou` WRITE;
+/*!40000 ALTER TABLE `iou` DISABLE KEYS */;
+INSERT INTO `iou` VALUES (1,NULL,NULL,10.00,'pending',NULL,'Jon','ron'),(2,NULL,NULL,10.00,'pending',NULL,'Tim','ron'),(3,NULL,NULL,10.00,'pending',NULL,'Go','ron');
+/*!40000 ALTER TABLE `iou` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -46,4 +58,4 @@ CREATE TABLE `iou` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-10-30 18:44:41
+-- Dump completed on 2024-10-31 23:21:16
