@@ -179,8 +179,13 @@ public class LoginGUI implements ActionListener, KeyListener {
                 //password = passwordField.getText();
                 if (checkUsername(username)) {
                     System.out.println("Login successful!");
+                    passwordConfirmLabel.setVisible(true);
+                    passwordConfirmLabel.setText("Login Sucessful");
+                    new IouGUI(username); // opens the IOU GUI window
                 } else {
-                    System.out.println("Login failed. Please check your credentials.");
+                    System.out.println("Login failed");
+                    passwordConfirmLabel.setVisible(true);
+                    passwordConfirmLabel.setText("Username not found");
                 }
             } else if (loginButton.getText().equals("Enter")) { // Create Account logic
                 username = usernameField.getText().trim();
@@ -188,6 +193,7 @@ public class LoginGUI implements ActionListener, KeyListener {
                 label.setText("Account Created:");
                 loginButton.setText("Login");  // Set the button text to "Login"
                 loginButton.setVisible(false); // Make the button invisible
+                passwordLabel.setVisible(false);
                 createButton.setText("Back");
                 if (UserRegistration.addUser(username)) {
                     System.out.println("User '" + username + "' added successfully!");
