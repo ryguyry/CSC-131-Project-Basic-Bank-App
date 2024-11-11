@@ -35,7 +35,8 @@ public class LoginGUI implements ActionListener, KeyListener {
     private JLabel passwordLabel;
     private JLabel passwordConfirmLabel;
     private JLabel passwordMatchLabel;
-    private String username;
+    private static String username;
+    int userId;
     //private String password;
 
     public LoginGUI() {//here is the constructor for our layout
@@ -132,6 +133,8 @@ public class LoginGUI implements ActionListener, KeyListener {
 	public static void main(String[] args) {
 		//generating the outline
 		new LoginGUI();
+		username = "test";
+		new IouGUI(username);
 	}
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -180,8 +183,9 @@ public class LoginGUI implements ActionListener, KeyListener {
                 if (checkUsername(username)) {
                     System.out.println("Login successful!");
                     passwordConfirmLabel.setVisible(true);
-                    passwordConfirmLabel.setText("Login Sucessful");
-                    new IouGUI(username); // opens the IOU GUI window
+                    passwordConfirmLabel.setText("Login Sucessful! What do you want to do today?");
+                    loginButton.setText("Deposit / Pay IOU");
+                    createButton.setText("Manage IOU");
                 } else {
                     System.out.println("Login failed");
                     passwordConfirmLabel.setVisible(true);
@@ -200,9 +204,7 @@ public class LoginGUI implements ActionListener, KeyListener {
                     usernameLabel.setText(username + " your account has successfully been created");
                 } else {
                     System.out.println("Failed to add user '" + username + "'.");
-                }
-                
-                
+                }                           
                 // Remove text fields since we're showing confirmed values
                 usernameField.setVisible(false);
                 passwordField.setVisible(false);
@@ -213,7 +215,10 @@ public class LoginGUI implements ActionListener, KeyListener {
                 usernameField.setText(""); 
                 passwordField.setText(""); 
                 passwordConfirmField.setText(""); 
+            } else if (loginButton.getText().equals("Deposit / Pay IOU")) {
+            	new accountGUI();
             }
+            
         }
         if (e.getSource() == createButton) {
     		if (createButton.getText().equals("Create Account")) {
@@ -235,6 +240,11 @@ public class LoginGUI implements ActionListener, KeyListener {
         	        usernameField.setText(""); // Clear the user name field
         	        passwordField.setText(""); // Clear the password field
         	        passwordConfirmField.setText(""); // Clear the password confirm field
+                    passwordConfirmField.setVisible(false); //show the password confirm field and labels
+                    passwordConfirmLabel.setVisible(false);
+                    passwordMatchLabel.setVisible(false);
+        		} else if (createButton.getText().equals("Back")) {
+        			new IouGUI(username);
         		}
         		else {
         			//go back to the initial state       	

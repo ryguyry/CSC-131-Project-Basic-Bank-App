@@ -7,6 +7,11 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -33,7 +38,8 @@ public class IouGUI implements ActionListener, KeyListener {
     private double amount;
     private String creditor;
     private String borrower;
-    //private String dueDate;
+    private String dueDate;
+    //private int creditorId ;
     
     //here is our constructor for the GUI
     public IouGUI(String username) {
@@ -123,8 +129,38 @@ public class IouGUI implements ActionListener, KeyListener {
     public static void main(String[] args) { 
         new IouGUI();
     }*/
-    //button actions
-    @Override
+    public void back() {
+		label.setText("IOU Manager");
+     	requestButton.setText("Create a new IOU");
+        requestButton.setVisible(true);
+        manageButton.setText("Manage Existing IOU");
+	    amountLabel.setVisible(false);
+	    amountField.setVisible(false);
+	    creditorLabel.setVisible(false);
+	    creditorField.setVisible(false);
+	    dueDateLabel.setVisible(false);
+	    dueDateField.setVisible(false);
+	    amountField.setText("");
+	    creditorField.setText("");
+	    dueDateField.setText(""); 
+    }   
+    	public static Integer getUserIdByUsername(String creditor){
+        String query = "SELECT userId FROM users WHERE username = ?";
+        try (Connection connection = bbaDatabase.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            
+            statement.setString(1, creditor);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {  // If a result is returned, the username exists
+                    return resultSet.getInt("user_id");  // Return the userId
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("An error occurred while checking the username: " + e.getMessage());
+        }
+        return null;  // Return null if the username doesn't exist or if an error occurred
+    }
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == requestButton) {
             if (requestButton.getText().equals("Create a new IOU")) {
@@ -149,7 +185,7 @@ public class IouGUI implements ActionListener, KeyListener {
                 //save values when "Send Request" is pressed
                 amount = Double.parseDouble(amountField.getText().trim());
                 creditor = creditorField.getText().trim(); 
-                //dueDate = dueDateField.getText().trim(); 
+                dueDate = dueDateField.getText().trim();
                 //update label and buttons for confirmation
                 label.setText("Confirm IOU:");
                 requestButton.setText("Confirm");
@@ -170,7 +206,7 @@ public class IouGUI implements ActionListener, KeyListener {
             } else if (requestButton.getText().equals("Confirm")) {
             	//call the createIou class
                 createIou createIou = new createIou();
-                createIou.addIou(amount, creditor, borrower);
+                createIou.addIou(amount, creditor, borrower, dueDate);
                 //final confirmation scenario            	
             	amountLabel.setVisible(true);
                 creditorLabel.setVisible(true);
@@ -181,75 +217,32 @@ public class IouGUI implements ActionListener, KeyListener {
                 manageButton.setVisible(false);
             }else if (requestButton.getText().equals("Return to IOU Manager")) {
                 //go back to the initial state
-                label.setText("IOU Manager");
-                requestButton.setText("Create a new IOU");
-                manageButton.setVisible(true);
-                manageButton.setText("Manage Existing IOU");
-			    amountLabel.setVisible(false);
-			    amountField.setVisible(false);
-			    creditorLabel.setVisible(false);
-			    creditorField.setVisible(false);
-			    dueDateLabel.setVisible(false);
-			    dueDateField.setVisible(false);
-			    amountField.setText("");
-			    creditorField.setText("");
-			    dueDateField.setText("");
+            	back();
             }       
         }
         //manage button functionality
         	if (e.getSource() == manageButton) {
         		if (manageButton.getText().equals("Manage Existing IOU")) {
-        			if (amount != 0.0 && creditor != null) {
-        				label.setText("Existing IOU");
+        			label.setText("Current IOU(s)");
+        			if (amount != 0.0 && creditor != null) {        			
         				requestButton.setText(creditor + " $" + amount);
         	            manageButton.setText("Back");
         			}
         			else {
-        				label.setText("Existing IOU");
-        				creditorLabel = new JLabel("No IOU has been found");
-        				creditorLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-        				panel.add(creditorLabel);
+        				user.setText("No current IOU(s) found.");
         				requestButton.setVisible(false);
         				manageButton.setText("Back");
         			}
         		}
         		else if (manageButton.getText().equals("Back")) {
-        			if (requestButton.getText().equals("Send Request")) {
-        				//go back to the initial state       	
-        				label.setText("IOU Manager");
-        				requestButton.setText("Create a new IOU");
-        				requestButton.setEnabled(true);
-        				manageButton.setText("Manage Existing IOU");
-        			    amountLabel.setVisible(false);
-        			    amountField.setVisible(false);
-        			    creditorLabel.setVisible(false);
-        			    creditorField.setVisible(false);
-        			    dueDateLabel.setVisible(false);
-        			    dueDateField.setVisible(false);
-        			    amountField.setText("");
-        			    creditorField.setText("");
-        			    dueDateField.setText("");
-        			}
-        			else {
-        				//go back to the initial state       	
-        				label.setText("IOU Manager");
-                     	requestButton.setText("Create a new IOU");
-                        requestButton.setVisible(true);
-                        manageButton.setText("Manage Existing IOU");
-        			    amountLabel.setVisible(false);
-        			    amountField.setVisible(false);
-        			    creditorLabel.setVisible(false);
-        			    creditorField.setVisible(false);
-        			    dueDateLabel.setVisible(false);
-        			    dueDateField.setVisible(false);
-        			    amountField.setText("");
-        			    creditorField.setText("");
-        			    dueDateField.setText("");                     
-        			}
+        			back(borrower);
                 }        		    	
         }
     }  
-  
+    public void back(String borrower) {
+    	back();
+	    user.setText("Welcome " + borrower + " how can we help you?");
+    }
 
     @Override
     public void keyReleased(KeyEvent e) {
