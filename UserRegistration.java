@@ -3,7 +3,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class UserRegistration {
-
     public static boolean addUser(String username) {
         // Connect to the database and insert the user
     	 String insertQuery = "INSERT INTO users (username) VALUES (?)";

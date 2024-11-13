@@ -36,7 +36,7 @@ public class LoginGUI implements ActionListener, KeyListener {
     private JLabel passwordConfirmLabel;
     private JLabel passwordMatchLabel;
     private static String username;
-    int userId;
+    static int userId;
     //private String password;
 
     public LoginGUI() {//here is the constructor for our layout
@@ -130,11 +130,13 @@ public class LoginGUI implements ActionListener, KeyListener {
         return false;
     }
         //THE FOLLOWING IS FOR TESTING PURPOSES:
-	public static void main(String[] args) {
+	public static void main(String[] args) throws SQLException {
 		//generating the outline
 		new LoginGUI();
 		username = "test";
 		new IouGUI(username);
+		userId = 5;
+		new accountGUI(username, userId);
 	}
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -216,7 +218,7 @@ public class LoginGUI implements ActionListener, KeyListener {
                 passwordField.setText(""); 
                 passwordConfirmField.setText(""); 
             } else if (loginButton.getText().equals("Deposit / Pay IOU")) {
-            	new accountGUI();
+            	//new accountGUI(username);
             }
             
         }

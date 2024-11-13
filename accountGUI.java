@@ -1,6 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class accountGUI implements ActionListener, KeyListener {
     private JFrame frame;
@@ -15,11 +19,34 @@ public class accountGUI implements ActionListener, KeyListener {
     private JButton backButton;
     String transaction;
     String recipient;
+    double balance;
     double deposit;
     double ioupayment;
     boolean isValidAmount;
+    int user_id;
+    String user;
 
-    public accountGUI() {
+    public accountGUI(String username, int userId) throws SQLException {
+    	try (Connection connection = bbaDatabase.getConnection()) {
+            // First, get the borrower_id using the borrower name (assuming the borrower name is unique)
+    		String balanceQuery = "SELECT balance FROM users WHERE username = ?";
+    		balance = -1; // Default value if balance is not found
+
+    		try (PreparedStatement stmt = connection.prepareStatement(balanceQuery)) {
+    		    stmt.setString(1, username); // Set the borrower name to get the user_id
+    		    try (ResultSet resultSet = stmt.executeQuery()) {
+    		        if (resultSet.next()) {
+    		            balance = resultSet.getDouble("balance");  // Retrieve the balance
+    		        }
+    		    }
+    		}
+            if (balance == -1) {
+                System.out.println("Borrower not found in the database.");
+                return;  // Return if borrower doesn't exist
+            }
+    	}
+    	this.user_id = userId;
+    	this.user = username;
         frame = new JFrame();
         panel = new JPanel();
         
@@ -33,13 +60,13 @@ public class accountGUI implements ActionListener, KeyListener {
         label.setAlignmentX(JLabel.CENTER_ALIGNMENT);
         
         // Transaction label and field
-        transactionLabel = new JLabel("Today is a great day for banking " + " how can we help?");
+        transactionLabel = new JLabel("Today is a great day for banking " + username + " how can we help?");
         transactionLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
         transactionField = new JTextField(15);
         transactionField.setAlignmentX(JTextField.CENTER_ALIGNMENT);
         
         // Deposit label and field
-        depositLabel = new JLabel("Your current balacne is: " + "$");
+        depositLabel = new JLabel("Your current balacne is: " + balance + "$");
         depositLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
         depositField = new JTextField(15);
         depositField.setAlignmentX(JTextField.CENTER_ALIGNMENT);
@@ -104,10 +131,10 @@ public class accountGUI implements ActionListener, KeyListener {
         });
     }
     private void resetToDefaultState() {
-        transactionLabel.setText("Today is a great day for banking " + " How can we help?");
+        transactionLabel.setText("Today is a great day for banking " + user + " How can we help?");
         transactionField.setVisible(false);
         depositLabel.setVisible(true);
-        depositLabel.setText("Your current balacne is: " + "$");
+        depositLabel.setText("Your current balacne is: " + balance + "$");
         depositField.setVisible(false);
         depositButton.setText("Deposit");
         iouButton.setText("Pay an IOU");
@@ -117,6 +144,26 @@ public class accountGUI implements ActionListener, KeyListener {
         depositButton.setEnabled(true);
         transactionField.setText("");
         depositField.setText("");
+    }
+    public void updateBalance(int user_id, double balance) {
+        String sql = "UPDATE users SET balance = ? WHERE user_id = ?";
+
+        try (Connection conn = bbaDatabase.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // Set the balance and user_id in the SQL statement
+            pstmt.setDouble(1, balance); // Set the new balance
+            pstmt.setInt(2, user_id);        // Set the user ID
+
+            // Execute the update
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Balance updated successfully.");
+            } else {
+                System.out.println("No user found with that ID.");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
     // Implement the ActionListener method for button actions
     @Override
@@ -133,12 +180,13 @@ public class accountGUI implements ActionListener, KeyListener {
                 backButton.setVisible(false);       // Hide the original Back button          
             } else if (depositButton.getText().equals("Confirm")) {
             	// Capture the deposit amount and display confirmation
-            	if (transactionField.getText().equals("How much would you like to deposit?")) {
+            	if (transactionLabel.getText().equals("How much would you like to deposit?")) {
             		try {
             			// Parse the text to a double and round to two decimal places
             			double depositAmount = Double.parseDouble(transactionField.getText());
             			depositAmount = Math.round(depositAmount * 100.0) / 100.0;
-
+            			balance = balance + depositAmount;
+            			updateBalance(user_id, balance);
             			// Display the confirmation message
             			transactionLabel.setText("Thank you, your deposit of $" + depositAmount + " has been confirmed.");
 
@@ -180,10 +228,6 @@ public class accountGUI implements ActionListener, KeyListener {
         } else if (e.getSource() == backButton) {
         	resetToDefaultState();
         }
-    }
-
-    public static void main(String[] args) {
-        new accountGUI(); // Create and show the Transaction GUI
     }
     @Override
     public void keyReleased(KeyEvent e) {
