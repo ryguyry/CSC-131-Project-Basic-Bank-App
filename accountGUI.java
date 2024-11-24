@@ -25,6 +25,9 @@ public class accountGUI implements ActionListener, KeyListener {
     boolean isValidAmount;
     int user_id;
     String user;
+    String creditor;
+    double iouBalance;
+    double creditorBalance;
 
     public accountGUI(String username, int userId) throws SQLException {
     	try (Connection connection = bbaDatabase.getConnection()) {
@@ -145,6 +148,19 @@ public class accountGUI implements ActionListener, KeyListener {
         transactionField.setText("");
         depositField.setText("");
     }
+    public static boolean checkUsername(String creditor) { //we could package this a class of its own
+        String query = "SELECT 1 FROM users WHERE username = ?";
+        try (Connection connection = bbaDatabase.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, creditor);  // Set the user name parameter in the query
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();  // If a result is returned, the user name exists
+            }
+        } catch (SQLException e) {
+            System.out.println("An error occurred while checking the username: " + e.getMessage());
+        }
+        return false;
+    }
     public void updateBalance(int user_id, double balance) {
         String sql = "UPDATE users SET balance = ? WHERE user_id = ?";
 
@@ -164,6 +180,50 @@ public class accountGUI implements ActionListener, KeyListener {
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+    }
+    public void updateIou(String creditor, double iouBalance) {
+        String sql = "UPDATE iou SET amount = ? WHERE iouBalance = ?";
+
+        try (Connection conn = bbaDatabase.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // Set the balance and user_id in the SQL statement
+            pstmt.setDouble(1, iouBalance); // Set the new balance
+            pstmt.setString(2, creditor);        // Set the user ID
+
+            // Execute the update
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("IOU updated successfully.");
+            } else {
+                System.out.println("No user found with that ID.");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    public double getIouBalance(int user_id, String creditor) {
+        String sql = "SELECT amount FROM iou WHERE username = ? AND creditor = ?";
+        iouBalance = 0.0;
+
+        try (Connection conn = bbaDatabase.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // Set the username and creditor parameters in the SQL statement
+            pstmt.setInt(1, user_id);
+            pstmt.setString(2, creditor);
+
+            // Execute the query and retrieve the result
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    iouBalance = rs.getDouble("amount"); // Get the balance
+                } else {
+                    System.out.println("No IOU found for that user and creditor.");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return iouBalance;
     }
     // Implement the ActionListener method for button actions
     @Override
@@ -201,10 +261,15 @@ public class accountGUI implements ActionListener, KeyListener {
             		}
             	}
             	else if(transactionField.getText().equals("How much would you like to transfer?")){
-            		//TRASACTION TO DATABASE CHECK GOES HERE
-            	}
-            	}
-            System.out.println("Deposit clicked. Amount: " + depositField.getText());
+            		creditor = depositField.getText().trim();
+            		if (checkUsername(creditor)) {            			
+                        System.out.println("Creditor found.");
+                        iouBalance = iouBalance - creditorBalance;
+                        updateIou(creditor, iouBalance);
+                }
+            }
+            System.out.println("Confirm clicked");
+            }
         } else if (e.getSource() == iouButton) {
         	if (iouButton.getText().equals("Pay an IOU")) {
                 // Update for IOU payment mode

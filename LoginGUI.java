@@ -133,10 +133,10 @@ public class LoginGUI implements ActionListener, KeyListener {
 	public static void main(String[] args) throws SQLException {
 		//generating the outline
 		new LoginGUI();
-		username = "test";
-		new IouGUI(username);
-		userId = 5;
-		new accountGUI(username, userId);
+		//username = "test";
+		//new IouGUI(username);
+		//userId = 5;
+		//new accountGUI(username, userId);
 	}
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -218,11 +218,33 @@ public class LoginGUI implements ActionListener, KeyListener {
                 passwordField.setText(""); 
                 passwordConfirmField.setText(""); 
             } else if (loginButton.getText().equals("Deposit / Pay IOU")) {
-            	//new accountGUI(username);
-            }
-            
+            	try (Connection connection = bbaDatabase.getConnection()) {
+                    //get the user id and EMAIL
+                    String getUserIdQuery = "SELECT user_id FROM users WHERE username = ?";
+                    userId = -1; // Default value if borrower is not found
+
+                    try (PreparedStatement getUserIdStmt = connection.prepareStatement(getUserIdQuery)) {
+                        getUserIdStmt.setString(1, username); // Set the borrower name to get the user_id
+                        try (ResultSet resultSet = getUserIdStmt.executeQuery()) {
+                            if (resultSet.next()) {
+                                userId = resultSet.getInt("user_id");  // Get user_id
+                            }
+                        }
+                    }
+                	new accountGUI(username, userId); 
+                    if (userId == -1) {
+                        System.out.println("Borrower not found in the database.");
+                        return;  // Return if borrower doesn't exist
+                    }
+            	} catch (SQLException e1) {
+                    System.err.println("Database connection failed: " + e1.getMessage());
+                }           	
+            }        
         }
         if (e.getSource() == createButton) {
+        	if (createButton.getText().equals("Manage IOU")) {
+    			new IouGUI(username, userId);
+        	}
     		if (createButton.getText().equals("Create Account")) {
             	loginButton.setEnabled(false); //here we have disabled the login (enter) button
                 passwordConfirmField.setVisible(true); //show the password confirm field and labels
@@ -231,7 +253,7 @@ public class LoginGUI implements ActionListener, KeyListener {
                 loginButton.setText("Enter");
                 createButton.setText("Back");              
             	}
-        	else if (createButton.getText().equals("Back")) { //back button for the create account
+    		else if (createButton.getText().equals("Back")) { //back button for the create account
         		if (loginButton.getText().equals("Enter")) {
         			//go back to the initial state       	
         			label.setText("Basic Banking");
@@ -245,8 +267,6 @@ public class LoginGUI implements ActionListener, KeyListener {
                     passwordConfirmField.setVisible(false); //show the password confirm field and labels
                     passwordConfirmLabel.setVisible(false);
                     passwordMatchLabel.setVisible(false);
-        		} else if (createButton.getText().equals("Back")) {
-        			new IouGUI(username);
         		}
         		else {
         			//go back to the initial state       	
@@ -262,7 +282,7 @@ public class LoginGUI implements ActionListener, KeyListener {
                     passwordField.setVisible(true);
                     
         		}
-        	}
+    		}
         }
 	}
 }
