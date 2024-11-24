@@ -39,13 +39,11 @@ public class IouGUI implements ActionListener, KeyListener {
     private String creditor;
     private String borrower;
     private String dueDate;
-    private int user_id;
     //private int creditorId ;
     
     //here is our constructor for the GUI
-    public IouGUI(String username, int userId) {
+    public IouGUI(String username) {
         this.borrower = username;
-        this.user_id = userId;
         frame = new JFrame();
         panel = new JPanel();  
         //boxLayout for vertical alignment
@@ -131,7 +129,6 @@ public class IouGUI implements ActionListener, KeyListener {
     public static void main(String[] args) { 
         new IouGUI();
     }*/
-    
     public void back() {
 		label.setText("IOU Manager");
      	requestButton.setText("Create a new IOU");
@@ -147,7 +144,7 @@ public class IouGUI implements ActionListener, KeyListener {
 	    creditorField.setText("");
 	    dueDateField.setText(""); 
     }   
-    	public static Integer getCreditorIdByUsername(String creditor){
+    	public static Integer getUserIdByUsername(String creditor){
         String query = "SELECT userId FROM users WHERE username = ?";
         try (Connection connection = bbaDatabase.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -156,7 +153,7 @@ public class IouGUI implements ActionListener, KeyListener {
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {  // If a result is returned, the username exists
-                    return resultSet.getInt("creditor_id");  // Return the userId
+                    return resultSet.getInt("user_id");  // Return the userId
                 }
             }
         } catch (SQLException e) {
@@ -209,7 +206,7 @@ public class IouGUI implements ActionListener, KeyListener {
             } else if (requestButton.getText().equals("Confirm")) {
             	//call the createIou class
                 createIou createIou = new createIou();
-                createIou.addIou(amount, creditor, borrower, dueDate, user_id);
+                createIou.addIou(amount, creditor, borrower, dueDate);
                 //final confirmation scenario            	
             	amountLabel.setVisible(true);
                 creditorLabel.setVisible(true);

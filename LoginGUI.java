@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,6 +22,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+
 
 public class LoginGUI implements ActionListener, KeyListener {
 	//here are our variables for the GUI
@@ -36,6 +39,7 @@ public class LoginGUI implements ActionListener, KeyListener {
     private JLabel passwordConfirmLabel;
     private JLabel passwordMatchLabel;
     private static String username;
+    private static String password;
     static int userId;
     //private String password;
 
@@ -129,14 +133,66 @@ public class LoginGUI implements ActionListener, KeyListener {
         }
         return false;
     }
+    public static boolean verifyLogin(String username, String enteredPassword) {
+        // SQL query to retrieve the hashed password and salt
+        String query = "SELECT password, salt FROM users WHERE username = ?";
+        try (Connection connection = bbaDatabase.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, username);  // Set the username in the query
+            ResultSet resultSet = statement.executeQuery();
+
+            // Check if the user exists
+            if (resultSet.next()) {
+                String storedHash = resultSet.getString("password");
+                String salt = resultSet.getString("salt");
+
+                // Hash the entered password with the retrieved salt
+                String hashedEnteredPassword = hashPassword(enteredPassword, salt);
+
+                // Compare the stored hash with the newly hashed password
+                return storedHash.equals(hashedEnteredPassword);
+            } else {
+                return false;  // User not found
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error verifying login: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Hash password with SHA-256 and salt
+    private static String hashPassword(String password, String salt) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String saltedPassword = password + salt;  // Combine password with salt
+            byte[] hash = digest.digest(saltedPassword.getBytes());  // Hash the salted password
+            StringBuilder hexString = new StringBuilder();
+
+            // Convert hash bytes to hexadecimal format
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();  // Return hashed password as hex string
+
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("Error hashing password: " + e.getMessage());
+            return null;  // Return null if hashing fails
+        }
+    }
         //THE FOLLOWING IS FOR TESTING PURPOSES:
 	public static void main(String[] args) throws SQLException {
 		//generating the outline
 		new LoginGUI();
-		//username = "test";
-		//new IouGUI(username);
-		//userId = 5;
-		//new accountGUI(username, userId);
+		username = "test";
+		new IouGUI(username);
+		userId = 5;
+		new accountGUI(username, userId);
 	}
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -181,8 +237,9 @@ public class LoginGUI implements ActionListener, KeyListener {
         if (e.getSource() == loginButton) {
             if (loginButton.getText().equals("Login")) {
             	username = usernameField.getText().trim();
-                //password = passwordField.getText();
-                if (checkUsername(username)) {
+                password = passwordField.getText().trim();
+                boolean isValid = verifyLogin(username, password);
+                if (checkUsername(username) && (isValid)) {
                     System.out.println("Login successful!");
                     passwordConfirmLabel.setVisible(true);
                     passwordConfirmLabel.setText("Login Sucessful! What do you want to do today?");
@@ -191,17 +248,18 @@ public class LoginGUI implements ActionListener, KeyListener {
                 } else {
                     System.out.println("Login failed");
                     passwordConfirmLabel.setVisible(true);
-                    passwordConfirmLabel.setText("Username not found");
+                    passwordConfirmLabel.setText("Username not found or incorrect password");
                 }
             } else if (loginButton.getText().equals("Enter")) { // Create Account logic
                 username = usernameField.getText().trim();
+                password = passwordField.getText().trim();
                 //password = passwordField.getText().trim();
                 label.setText("Account Created:");
                 loginButton.setText("Login");  // Set the button text to "Login"
                 loginButton.setVisible(false); // Make the button invisible
                 passwordLabel.setVisible(false);
                 createButton.setText("Back");
-                if (UserRegistration.addUser(username)) {
+                if (UserRegistration.addUser(username, password)) {
                     System.out.println("User '" + username + "' added successfully!");
                     usernameLabel.setText(username + " your account has successfully been created");
                 } else {
@@ -218,33 +276,11 @@ public class LoginGUI implements ActionListener, KeyListener {
                 passwordField.setText(""); 
                 passwordConfirmField.setText(""); 
             } else if (loginButton.getText().equals("Deposit / Pay IOU")) {
-            	try (Connection connection = bbaDatabase.getConnection()) {
-                    //get the user id and EMAIL
-                    String getUserIdQuery = "SELECT user_id FROM users WHERE username = ?";
-                    userId = -1; // Default value if borrower is not found
-
-                    try (PreparedStatement getUserIdStmt = connection.prepareStatement(getUserIdQuery)) {
-                        getUserIdStmt.setString(1, username); // Set the borrower name to get the user_id
-                        try (ResultSet resultSet = getUserIdStmt.executeQuery()) {
-                            if (resultSet.next()) {
-                                userId = resultSet.getInt("user_id");  // Get user_id
-                            }
-                        }
-                    }
-                	new accountGUI(username, userId); 
-                    if (userId == -1) {
-                        System.out.println("Borrower not found in the database.");
-                        return;  // Return if borrower doesn't exist
-                    }
-            	} catch (SQLException e1) {
-                    System.err.println("Database connection failed: " + e1.getMessage());
-                }           	
-            }        
+            	//new accountGUI(username);
+            }
+            
         }
         if (e.getSource() == createButton) {
-        	if (createButton.getText().equals("Manage IOU")) {
-    			new IouGUI(username, userId);
-        	}
     		if (createButton.getText().equals("Create Account")) {
             	loginButton.setEnabled(false); //here we have disabled the login (enter) button
                 passwordConfirmField.setVisible(true); //show the password confirm field and labels
@@ -253,7 +289,7 @@ public class LoginGUI implements ActionListener, KeyListener {
                 loginButton.setText("Enter");
                 createButton.setText("Back");              
             	}
-    		else if (createButton.getText().equals("Back")) { //back button for the create account
+        	else if (createButton.getText().equals("Back")) { //back button for the create account
         		if (loginButton.getText().equals("Enter")) {
         			//go back to the initial state       	
         			label.setText("Basic Banking");
@@ -267,6 +303,8 @@ public class LoginGUI implements ActionListener, KeyListener {
                     passwordConfirmField.setVisible(false); //show the password confirm field and labels
                     passwordConfirmLabel.setVisible(false);
                     passwordMatchLabel.setVisible(false);
+        		} else if (createButton.getText().equals("Back")) {
+        			new IouGUI(username);
         		}
         		else {
         			//go back to the initial state       	
@@ -282,7 +320,7 @@ public class LoginGUI implements ActionListener, KeyListener {
                     passwordField.setVisible(true);
                     
         		}
-    		}
+        	}
         }
 	}
 }
