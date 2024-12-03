@@ -1,14 +1,14 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-//import java.sql.PreparedStatement; //Required for test function
+//import java.sql.PreparedStatement; //required for test function
 //import java.sql.ResultSet;
 
-
+// connects to the database
 public class bbaDatabase {
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/bba_db"; // Specify the database name here
-    private static final String USER = "publicUser";  // User with read/write access only for schema
-    private static final String PASSWORD = "BasicBank0327"; // Password
+    private static final String URL = "jdbc:mysql://127.0.0.1:3306/bba_db"; //specify the database IP address, port, and name here
+    private static final String USER = "publicUser";  //user with read/write access only for schema (this wont work if there is not a "publicUser" in bba_db
+    private static final String PASSWORD = "BasicBank0327"; //password for user
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
@@ -16,7 +16,7 @@ public class bbaDatabase {
     
     //TEST FUNCTION
     /*
-    // Method to check if a user name exists in the 'users' table
+    //here is a function to check if a user name exists in the 'users' table that was used for testing
     public static boolean checkUsername(String username) {
         String query = "SELECT 1 FROM users WHERE username = ?";
         try (Connection connection = getConnection();

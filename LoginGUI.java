@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,6 +22,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+
 
 public class LoginGUI implements ActionListener, KeyListener {
 	//here are our variables for the GUI
@@ -36,7 +39,8 @@ public class LoginGUI implements ActionListener, KeyListener {
     private JLabel passwordConfirmLabel;
     private JLabel passwordMatchLabel;
     private static String username;
-    static int userId;
+    private static String password;
+    int userId;
     //private String password;
 
     public LoginGUI() {//here is the constructor for our layout
@@ -44,7 +48,7 @@ public class LoginGUI implements ActionListener, KeyListener {
         panel = new JPanel();       
         //boxLayout for vertical alignment
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 100, 50)); // Padding around the panel        
+        panel.setBorder(BorderFactory.createEmptyBorder(50, 50, 100, 50)); //formating for a empty boarder around the panel        
         //label at the top
         label = new JLabel("Basic Banking");
         //initialize and add labels and fields for account creation
@@ -53,12 +57,12 @@ public class LoginGUI implements ActionListener, KeyListener {
         passwordConfirmLabel = new JLabel("Confirm Password:");
         passwordMatchLabel = new JLabel("Passwords do not match");
         usernameField = new JTextField(15);
-        passwordField = new JTextField(15);         // Initialize password field
-        passwordConfirmField = new JTextField(15);  // Initialize password confirm field      
+        passwordField = new JTextField(15);         //initialize password field
+        passwordConfirmField = new JTextField(15);  //initialize password confirm field      
         passwordMatchLabel.setVisible(false); //hide initially
         passwordConfirmField.setVisible(false);
-        label.setFont(new Font("Arial", Font.BOLD, 24)); // set font size to 24
-        label.setAlignmentX(JLabel.CENTER_ALIGNMENT); // center the label
+        label.setFont(new Font("Arial", Font.BOLD, 24)); //set font size to 24
+        label.setAlignmentX(JLabel.CENTER_ALIGNMENT); //center the label
         //buttons and their labels
         loginButton = new JButton("Login");
         createButton = new JButton("Create Account");
@@ -97,11 +101,11 @@ public class LoginGUI implements ActionListener, KeyListener {
         passwordConfirmField.setVisible(false);
         passwordConfirmLabel.setVisible(false);
         passwordMatchLabel.setVisible(false);
-        panel.add(Box.createVerticalStrut(50)); // Vertical space between label and buttons
-        panel.add(loginButton); // Add login button
+        panel.add(Box.createVerticalStrut(50)); //vertical space between label and buttons
+        panel.add(loginButton); //add login button
         loginButton.setEnabled(false);
-        panel.add(Box.createVerticalStrut(15)); // Vertical space between buttons
-        panel.add(createButton); // Add create button
+        panel.add(Box.createVerticalStrut(15)); //vertical space between buttons
+        panel.add(createButton); //add create button
         //set up the windows frame
         frame.add(panel, BorderLayout.CENTER);
         frame.setTitle("Basic Banking");
@@ -115,28 +119,82 @@ public class LoginGUI implements ActionListener, KeyListener {
             }
         });
     }
-    
+    public void back() {
+		//go back to the initial state       	
+		label.setText("Basic Banking");
+        usernameLabel.setText("Username"); 
+        passwordLabel.setText("Password");
+        loginButton.setText("Login");
+        loginButton.setVisible(true);
+        createButton.setText("Create Account");
+        usernameLabel.setVisible(true);
+        usernameField.setVisible(true);
+        passwordLabel.setVisible(true);
+        passwordField.setVisible(true);
+    }
+    //function to check database for a username
     public static boolean checkUsername(String username) { //we could package this a class of its own
         String query = "SELECT 1 FROM users WHERE username = ?";
         try (Connection connection = bbaDatabase.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, username);  // Set the user name parameter in the query
+            statement.setString(1, username);  //set the user name parameter in the query
             try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next();  // If a result is returned, the user name exists
+                return resultSet.next();  //if a result is returned, the user name exists
             }
         } catch (SQLException e) {
             System.out.println("An error occurred while checking the username: " + e.getMessage());
         }
         return false;
     }
-        //THE FOLLOWING IS FOR TESTING PURPOSES:
+    //function to verify the password
+    public static boolean verifyLogin(String username, String enteredPassword) {
+        //SQL query to retrieve the hashed password and salt
+        String query = "SELECT password, salt FROM users WHERE username = ?";
+        try (Connection connection = bbaDatabase.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, username);  // Set the username in the query
+            ResultSet resultSet = statement.executeQuery();
+            //check if the user exists
+            if (resultSet.next()) {
+                String storedHash = resultSet.getString("password");
+                String salt = resultSet.getString("salt");
+                //hash the entered password with the retrieved salt
+                String hashedEnteredPassword = hashPassword(enteredPassword, salt);
+                //compare the stored hash with the newly hashed password
+                return storedHash.equals(hashedEnteredPassword);
+            } else {
+                return false;  // User not found
+            }
+        } catch (SQLException e) {
+            System.out.println("Error verifying login: " + e.getMessage());
+            return false;
+        }
+    }
+    //hash password with SHA-256 and salt
+    private static String hashPassword(String password, String salt) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String saltedPassword = password + salt;  //combine password with salt
+            byte[] hash = digest.digest(saltedPassword.getBytes());  //hash the salted password
+            StringBuilder hexString = new StringBuilder();
+            //convert hash bytes to hexadecimal format
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();  //return hashed password as hex string
+
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("Error hashing password: " + e.getMessage());
+            return null;  //return null if hashing fails
+        }
+    }
 	public static void main(String[] args) throws SQLException {
-		//generating the outline
+		//call the Login graphic user interface
 		new LoginGUI();
-		username = "test";
-		new IouGUI(username);
-		userId = 5;
-		new accountGUI(username, userId);
 	}
 	@Override
 	public void keyTyped(KeyEvent e) {
@@ -181,9 +239,14 @@ public class LoginGUI implements ActionListener, KeyListener {
         if (e.getSource() == loginButton) {
             if (loginButton.getText().equals("Login")) {
             	username = usernameField.getText().trim();
-                //password = passwordField.getText();
-                if (checkUsername(username)) {
+                password = passwordField.getText().trim();
+                boolean isValid = verifyLogin(username, password);
+                if (checkUsername(username) && (isValid)) {
                     System.out.println("Login successful!");
+                    usernameField.setVisible(false); //show the password confirm field and labels
+                    usernameLabel.setVisible(false);
+                    passwordField.setVisible(false); //show the password confirm field and labels
+                    passwordLabel.setVisible(false);
                     passwordConfirmLabel.setVisible(true);
                     passwordConfirmLabel.setText("Login Sucessful! What do you want to do today?");
                     loginButton.setText("Deposit / Pay IOU");
@@ -191,23 +254,24 @@ public class LoginGUI implements ActionListener, KeyListener {
                 } else {
                     System.out.println("Login failed");
                     passwordConfirmLabel.setVisible(true);
-                    passwordConfirmLabel.setText("Username not found");
+                    passwordConfirmLabel.setText("Username not found or incorrect password");
                 }
-            } else if (loginButton.getText().equals("Enter")) { // Create Account logic
+            } else if (loginButton.getText().equals("Enter")) { //create Account logic
                 username = usernameField.getText().trim();
+                password = passwordField.getText().trim();
                 //password = passwordField.getText().trim();
                 label.setText("Account Created:");
-                loginButton.setText("Login");  // Set the button text to "Login"
-                loginButton.setVisible(false); // Make the button invisible
+                loginButton.setText("Login");  //set the button text to "Login"
+                loginButton.setVisible(false); //make the button invisible
                 passwordLabel.setVisible(false);
                 createButton.setText("Back");
-                if (UserRegistration.addUser(username)) {
+                if (UserRegistration.addUser(username, password)) {
                     System.out.println("User '" + username + "' added successfully!");
                     usernameLabel.setText(username + " your account has successfully been created");
                 } else {
                     System.out.println("Failed to add user '" + username + "'.");
                 }                           
-                // Remove text fields since we're showing confirmed values
+                //remove text fields since we're showing confirmed values
                 usernameField.setVisible(false);
                 passwordField.setVisible(false);
                 passwordConfirmField.setVisible(false);
@@ -218,7 +282,12 @@ public class LoginGUI implements ActionListener, KeyListener {
                 passwordField.setText(""); 
                 passwordConfirmField.setText(""); 
             } else if (loginButton.getText().equals("Deposit / Pay IOU")) {
-            	//new accountGUI(username);
+            	try {
+					new accountGUI(username, userId);
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
             }
             
         }
@@ -231,6 +300,9 @@ public class LoginGUI implements ActionListener, KeyListener {
                 loginButton.setText("Enter");
                 createButton.setText("Back");              
             	}
+    		else if (createButton.getText().equals("Manage IOU")) {
+    			new IouGUI(username);
+    		}
         	else if (createButton.getText().equals("Back")) { //back button for the create account
         		if (loginButton.getText().equals("Enter")) {
         			//go back to the initial state       	
@@ -239,28 +311,22 @@ public class LoginGUI implements ActionListener, KeyListener {
         			passwordLabel.setText("Password");
         			loginButton.setText("Login");
         			createButton.setText("Create Account");
-        	        usernameField.setText(""); // Clear the user name field
-        	        passwordField.setText(""); // Clear the password field
-        	        passwordConfirmField.setText(""); // Clear the password confirm field
+        	        usernameField.setText(""); //clear the user name field
+        	        passwordField.setText(""); //clear the password field
+        	        passwordConfirmField.setText(""); //clear the password confirm field
                     passwordConfirmField.setVisible(false); //show the password confirm field and labels
                     passwordConfirmLabel.setVisible(false);
                     passwordMatchLabel.setVisible(false);
-        		} else if (createButton.getText().equals("Back")) {
-        			new IouGUI(username);
         		}
-        		else {
-        			//go back to the initial state       	
-        			label.setText("Basic Banking");
-                    usernameLabel.setText("Username"); 
-                    passwordLabel.setText("Password");
-                    loginButton.setText("Login");
-                    loginButton.setVisible(true);
-                    createButton.setText("Create Account");
-                    usernameLabel.setVisible(true);
-                    usernameField.setVisible(true);
-                    passwordLabel.setVisible(true);
-                    passwordField.setVisible(true);
-                    
+        		if (!loginButton.isVisible()) {
+                    usernameField.setVisible(false); //show the password confirm field and labels
+                    usernameLabel.setVisible(false);
+                    passwordField.setVisible(false); //show the password confirm field and labels
+                    passwordLabel.setVisible(false);
+                    back();
+        		}
+        		else{
+        		back();
         		}
         	}
         }

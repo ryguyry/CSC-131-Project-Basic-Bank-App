@@ -7,11 +7,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -39,7 +34,6 @@ public class IouGUI implements ActionListener, KeyListener {
     private String creditor;
     private String borrower;
     private String dueDate;
-    //private int creditorId ;
     
     //here is our constructor for the GUI
     public IouGUI(String username) {
@@ -53,9 +47,9 @@ public class IouGUI implements ActionListener, KeyListener {
         label = new JLabel("IOU Manager");
         user = new JLabel("Welcome " + username + " how can we help you?");
         dueDateLabel = new JLabel("When do you think you can pay it back?");
-        label.setFont(new Font("Arial", Font.BOLD, 24)); // set font size to 24
-        label.setAlignmentX(JLabel.CENTER_ALIGNMENT); // center the label
-        user.setFont(new Font("Arial", Font.BOLD, 18)); // set font size to 24
+        label.setFont(new Font("Arial", Font.BOLD, 24)); //set font size to 24
+        label.setAlignmentX(JLabel.CENTER_ALIGNMENT); //center the label
+        user.setFont(new Font("Arial", Font.BOLD, 18)); //set font size to 24
         user.setAlignmentX(JLabel.CENTER_ALIGNMENT);
         dueDateLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);     
         //buttons and their labels
@@ -125,15 +119,13 @@ public class IouGUI implements ActionListener, KeyListener {
             }
         });
     }
-    /*here is the TEST FROM EARLIER - DO WE NEED? (Probably not)
-    public static void main(String[] args) { 
-        new IouGUI();
-    }*/
+    //function to return the original layout typically used by the back button
     public void back() {
 		label.setText("IOU Manager");
      	requestButton.setText("Create a new IOU");
         requestButton.setVisible(true);
         manageButton.setText("Manage Existing IOU");
+        manageButton.setVisible(true);
 	    amountLabel.setVisible(false);
 	    amountField.setVisible(false);
 	    creditorLabel.setVisible(false);
@@ -144,25 +136,11 @@ public class IouGUI implements ActionListener, KeyListener {
 	    creditorField.setText("");
 	    dueDateField.setText(""); 
     }   
-    	public static Integer getUserIdByUsername(String creditor){
-        String query = "SELECT userId FROM users WHERE username = ?";
-        try (Connection connection = bbaDatabase.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            
-            statement.setString(1, creditor);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {  // If a result is returned, the username exists
-                    return resultSet.getInt("user_id");  // Return the userId
-                }
-            }
-        } catch (SQLException e) {
-            System.out.println("An error occurred while checking the username: " + e.getMessage());
-        }
-        return null;  // Return null if the username doesn't exist or if an error occurred
-    }
+    //this listens for a click on a button
     public void actionPerformed(ActionEvent e) {
+    	//this handles the top button
         if (e.getSource() == requestButton) {
+        	//depending on the buttons text it will do certain things in the GUI
             if (requestButton.getText().equals("Create a new IOU")) {
                 label.setText("Request Money");
                 requestButton.setText("Send Request");
@@ -264,4 +242,3 @@ public class IouGUI implements ActionListener, KeyListener {
         //not used
     }
 }
-
