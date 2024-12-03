@@ -1,4 +1,11 @@
-Here we have four .java class files.
+Our project consist of six .java class files:
+accountGUI.java
+bbaDatabase.java
+createIou.java
+IouGUI.java
+LoginGUI.java
+UserRegisteration.java
+If you are interested in running the prototype there is some assembly required. 
 Create a project in Eclipse with these file and add the .jar file from other readme.
 Install MySQL and just use the default settings, should be 127.0.0.1 port 3306
 Import the .sql file into MySQL (bba11-13.sql)
